@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { query } = require('../db');
 const redis = require('../redis');
+const logClick = require('../utils/logClick');
 
 router.get('/:code', async (req, res) => {
   const { code } = req.params;
@@ -10,13 +11,20 @@ router.get('/:code', async (req, res) => {
     const cached = await redis.get(`url:${code}`);
 
     if (cached) {
+      const urlResult = await query(
+        `UPDATE urls SET click_count = click_count + 1 
+         WHERE short_code = $1 
+         RETURNING id`,
+        [code]
+      );
+      logClick(urlResult.rows[0].id, req);
       return res.redirect(302, cached);
     }
 
     const result = await query(
-      `SELECT original_url, expires_at 
-       FROM urls 
-       WHERE short_code = $1`,
+      `UPDATE urls SET click_count = click_count + 1
+       WHERE short_code = $1
+       RETURNING id, original_url, expires_at`,
       [code]
     );
 
@@ -24,13 +32,15 @@ router.get('/:code', async (req, res) => {
       return res.status(404).json({ error: 'Short URL not found' });
     }
 
-    const { original_url, expires_at } = result.rows[0];
+    const { id, original_url, expires_at } = result.rows[0];
 
     if (expires_at && new Date(expires_at) < new Date()) {
       return res.status(410).json({ error: 'This link has expired' });
     }
 
     await redis.set(`url:${code}`, original_url, 'EX', 3600);
+
+    logClick(id, req);
 
     return res.redirect(302, original_url);
 

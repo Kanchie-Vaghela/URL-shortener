@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { query } = require('../db');
 const { generateShortCode } = require('../utils/base62');
+const redis = require('../redis');
 
 router.post('/', async (req, res) => {
   const { url, expires_in_days } = req.body;
@@ -38,6 +39,28 @@ router.post('/', async (req, res) => {
       original_url: row.original_url,
       expires_at: row.expires_at,
     });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: 'Server error' });
+  }
+});
+
+router.delete('/:code', async (req, res) => {
+  const { code } = req.params;
+
+  try {
+    const result = await query(
+      `DELETE FROM urls WHERE short_code = $1 RETURNING short_code`,
+      [code]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Short URL not found' });
+    }
+
+    await redis.del(`url:${code}`);
+
+    return res.status(200).json({ message: `${code} deleted` });
   } catch (err) {
     console.error(err);
     return res.status(500).json({ error: 'Server error' });

@@ -2,12 +2,13 @@ require('dotenv').config();
 const express = require('express');
 const shortenRouter = require('./routes/shorten');
 const redirectRouter = require('./routes/redirect');
+const rateLimiter = require('./middleware/rateLimiter');
 
 const app = express();
 app.use(express.json());
 
 app.use('/shorten', shortenRouter);
-app.use('/', redirectRouter);
+app.use('/', rateLimiter, redirectRouter);
 
 app.get('/health', (req, res) => {
   res.json({ status: 'ok' });

@@ -67,6 +67,25 @@ router.delete("/:code", async (req, res) => {
     console.error(err);
     return res.status(500).json({ error: "Server error" });
   }
+}
+
+
+);
+
+router.get('/', async (req, res) => {
+  try {
+    const result = await query(
+      `SELECT short_code, original_url, click_count, created_at, expires_at
+       FROM urls
+       WHERE user_id = $1
+       ORDER BY created_at DESC`,
+      [req.user.userId]
+    );
+    return res.status(200).json(result.rows);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: 'Server error' });
+  }
 });
 
 module.exports = router;

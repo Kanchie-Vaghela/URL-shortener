@@ -3,11 +3,20 @@ const { query } = require('./db');
 
 async function migrate() {
   await query(`
+    CREATE TABLE IF NOT EXISTS users (
+      id SERIAL PRIMARY KEY,
+      email VARCHAR(255) UNIQUE NOT NULL,
+      password_hash TEXT NOT NULL,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )
+  `);
+
+  await query(`
     CREATE TABLE IF NOT EXISTS urls (
       id SERIAL PRIMARY KEY,
       short_code VARCHAR(20) UNIQUE NOT NULL,
       original_url TEXT NOT NULL,
-      user_id INTEGER,
+      user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
       created_at TIMESTAMPTZ DEFAULT NOW(),
       expires_at TIMESTAMPTZ,
       click_count INTEGER DEFAULT 0

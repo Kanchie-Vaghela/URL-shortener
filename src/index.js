@@ -3,12 +3,15 @@ const express = require('express');
 const shortenRouter = require('./routes/shorten');
 const redirectRouter = require('./routes/redirect');
 const analyticsRouter = require('./routes/analytics');
+const authRouter = require('./routes/auth');
 const rateLimiter = require('./middleware/rateLimiter');
+const authenticate = require('./middleware/authenticate');
 
 const app = express();
 app.use(express.json());
 
-app.use('/shorten', shortenRouter);
+app.use('/auth', authRouter);
+app.use('/shorten', authenticate, shortenRouter);
 app.use('/analytics', analyticsRouter);
 app.use('/', rateLimiter, redirectRouter);
 

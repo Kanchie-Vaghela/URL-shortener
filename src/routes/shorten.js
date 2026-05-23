@@ -1,20 +1,20 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const { query } = require('../db');
-const { generateShortCode } = require('../utils/base62');
-const redis = require('../redis');
+const { query } = require("../db");
+const { generateShortCode } = require("../utils/base62");
+const redis = require("../redis");
 
-router.post('/', async (req, res) => {
+router.post("/", async (req, res) => {
   const { url, expires_in_days } = req.body;
 
   if (!url) {
-    return res.status(400).json({ error: 'url is required' });
+    return res.status(400).json({ error: "url is required" });
   }
 
   try {
     new URL(url);
   } catch {
-    return res.status(400).json({ error: 'Invalid URL' });
+    return res.status(400).json({ error: "Invalid URL" });
   }
 
   const short_code = generateShortCode();
@@ -24,11 +24,13 @@ router.post('/', async (req, res) => {
     : null;
 
   try {
+    const userId = req.user?.userId || null;
+
     const result = await query(
-      `INSERT INTO urls (short_code, original_url, expires_at)
-       VALUES ($1, $2, $3)
-       RETURNING id, short_code, original_url, created_at, expires_at`,
-      [short_code, url, expires_at]
+      `INSERT INTO urls (short_code, original_url, user_id, expires_at)
+   VALUES ($1, $2, $3, $4)
+   RETURNING id, short_code, original_url, created_at, expires_at`,
+      [short_code, url, userId, expires_at],
     );
 
     const row = result.rows[0];
@@ -41,21 +43,21 @@ router.post('/', async (req, res) => {
     });
   } catch (err) {
     console.error(err);
-    return res.status(500).json({ error: 'Server error' });
+    return res.status(500).json({ error: "Server error" });
   }
 });
 
-router.delete('/:code', async (req, res) => {
+router.delete("/:code", async (req, res) => {
   const { code } = req.params;
 
   try {
     const result = await query(
       `DELETE FROM urls WHERE short_code = $1 RETURNING short_code`,
-      [code]
+      [code],
     );
 
     if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Short URL not found' });
+      return res.status(404).json({ error: "Short URL not found" });
     }
 
     await redis.del(`url:${code}`);
@@ -63,7 +65,7 @@ router.delete('/:code', async (req, res) => {
     return res.status(200).json({ message: `${code} deleted` });
   } catch (err) {
     console.error(err);
-    return res.status(500).json({ error: 'Server error' });
+    return res.status(500).json({ error: "Server error" });
   }
 });
 

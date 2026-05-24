@@ -5,7 +5,7 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
-     "build": "cd client && npm install && npm run build"
+    "build": "cd client && npm install && npm run build && ls -la dist"
   },
   "keywords": [],
   "author": "",

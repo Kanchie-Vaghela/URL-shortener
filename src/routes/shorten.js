@@ -37,7 +37,7 @@ router.post("/", async (req, res) => {
 
     return res.status(201).json({
       short_code: row.short_code,
-      short_url: `http://localhost:${process.env.PORT || 3000}/${row.short_code}`,
+      short_url: `${process.env.BASE_URL}/${row.short_code}`,
       original_url: row.original_url,
       expires_at: row.expires_at,
     });

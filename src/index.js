@@ -12,7 +12,9 @@ const app = express();
 app.use(express.json());
 
 const cors = require('cors');
-app.use(cors({ origin: 'http://localhost:5173' }));
+app.use(cors({
+  origin: process.env.FRONTEND_URL || 'http://localhost:5173'
+}));
 
 app.use('/auth', authRouter);
 app.use('/shorten', authenticate, shortenRouter);
@@ -22,6 +24,16 @@ app.use('/', rateLimiter, redirectRouter);
 app.get('/health', (req, res) => {
   res.json({ status: 'ok' });
 });
+
+const path = require('path');
+
+if (process.env.NODE_ENV === 'production') {
+  app.use(express.static(path.join(__dirname, '../client/dist')));
+
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '../client/dist', 'index.html'));
+  });
+}
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {

@@ -10,6 +10,7 @@ const authenticate = require('./middleware/authenticate');
 
 const app = express();
 app.use(express.json());
+app.set('trust proxy', 1);
 
 const cors = require('cors');
 app.use(cors({

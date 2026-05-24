@@ -3,7 +3,7 @@ const geoip = require('geoip-lite');
 
 async function logClick(urlId, req) {
   try {
-    const ip = req.ip;
+    const ip = req.headers['x-forwarded-for']?.split(',')[0].trim() || req.ip;;
     const ipHash = Buffer.from(ip).toString('base64');
     
     const geo = geoip.lookup(ip);

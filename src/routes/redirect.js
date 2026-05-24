@@ -3,17 +3,9 @@ const router = express.Router();
 const { query } = require('../db');
 const redis = require('../redis');
 const logClick = require('../utils/logClick');
-const path = require('path');
-
-const FRONTEND_ROUTES = ['dashboard', 'login', 'register', 'analytics'];
 
 router.get('/:code', async (req, res) => {
   const { code } = req.params;
-
-  if (FRONTEND_ROUTES.includes(code)) {
-    return res.sendFile(path.join(__dirname, '../../client/dist', 'index.html'));
-  }
-
 
   try {
     const cached = await redis.get(`url:${code}`);
